@@ -1,0 +1,9 @@
+/eos/user/a/aaarora/signal/Run3Summer22/VBSWWH_OSWW_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22/VBSWWH_SSWW_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22/VBSWZH_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22/VBSZZH_5f_LO_TuneCP5
+
+/eos/user/a/aaarora/signal/Run3Summer22EE/VBSWWH_OSWW_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22EE/VBSWWH_SSWW_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22EE/VBSWZH_5f_LO_TuneCP5  
+/eos/user/a/aaarora/signal/Run3Summer22EE/VBSZZH_5f_LO_TuneCP5

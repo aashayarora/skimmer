@@ -1,0 +1,18 @@
+drop * # start with all
+keep Electron.*
+keep Muon.*
+keep Jet.*
+keep .*Gen.*
+keep FatJet.*
+keep MET.*
+keep btagWeight.*
+keep LHE.*
+keep .*Weight.*
+keep Flag.*
+keep SubJet.*
+keep HLT.*
+keep Pileup.*
+keep event
+keep run
+keep luminosityBlock
+keep genWeight
