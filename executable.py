@@ -21,20 +21,47 @@ MAX_RETRIES = 10
 SLEEP_DURATION = 60  # 1 minute in seconds
 
 class Skimmer():
-    def __init__(self, inFiles, outDir, keepDropFile, n_workers=1):
+    def __init__(self, inFiles, outDir, keepDropFile):
         self.inFiles = inFiles
         self.outDir = outDir
         self.keepDropFile = keepDropFile
-        r.EnableImplicitMT(n_workers)
 
         self.df = r.RDataFrame("Events", self.inFiles)
-    
+        r.RDF.Experimental.AddProgressBar(self.df)
+        columns = self.df.GetColumnNames()
+        for col in columns:
+            if col.startswith("Muon_") or col.startswith("Electron_") or col.startswith("Jet_") or col.startswith("FatJet_"):
+                colType = self.df.GetColumnType(col)
+                if colType == "ROOT::VecOps::RVec<Float_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Float_t')())
+                elif colType == "ROOT::VecOps::RVec<Int_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Int_t')())
+                elif colType == "ROOT::VecOps::RVec<UShort_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('UShort_t')())
+                elif colType == "ROOT::VecOps::RVec<Bool_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Bool_t')())
+                elif colType == "ROOT::VecOps::RVec<UChar_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('UChar_t')())
+                elif colType == "ROOT::VecOps::RVec<Double_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Double_t')())
+                elif colType == "ROOT::VecOps::RVec<ULong64_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('ULong64_t')())
+                elif colType == "ROOT::VecOps::RVec<Long64_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Long64_t')())
+                elif colType == "ROOT::VecOps::RVec<Short_t>":
+                    self.df = self.df.DefaultValueFor(col, r.RVec('Short_t')())
+                else:
+                    print(f"Unknown column type: {colType} for column {col}")
+
+        self.df.Display(["Electron_pt"]).Print()
+
     def analyze(self):
         self.df = self.df.Define("tight_mu_mask", "Muon_pt > 35. && abs(Muon_eta) < 2.4 && Muon_tightId") \
             .Define("tight_ele_mask", "Electron_pt > 35. && abs(Electron_eta) < 2.5 && Electron_cutBased >= 4") \
             .Filter("Sum(tight_mu_mask) + Sum(tight_ele_mask) < 2") \
             .Define("fatjet_mask", "FatJet_pt > 200 && FatJet_msoftdrop > 10 && FatJet_mass > 10") \
-            .Filter("(Sum(fatjet_mask) >= 1)")
+            .Define("jet_mask", "Jet_pt > 20 && abs(Jet_eta) < 2.4") \
+            .Filter("((2 * Sum(fatjet_mask)) + Sum(jet_mask)) >= 6")
 
         return self.df.Count().GetValue()
 
@@ -76,14 +103,14 @@ class Skimmer():
         runs_df.Snapshot("Runs", self.outDir + "/" + tag + ".root", cols, snap_opts)
 
 
-def run_skimmer(input_file, output_dir, n_workers):
+def run_skimmer(input_file, output_dir):
     print(f"Running skimmer on {input_file}")
     os.makedirs(output_dir, exist_ok=True)
     
     inFiles = [XROOTD_REDIRECTOR + input_file if input_file.startswith('/store') else 'file://' + input_file]
     keepDropFile = "keep_and_drop_skim.txt"
     
-    skimmer = Skimmer(inFiles, output_dir, keepDropFile, n_workers=n_workers)
+    skimmer = Skimmer(inFiles, output_dir, keepDropFile)
     passed = skimmer.analyze()
     if passed:
         skimmer.Snapshot("skim")
@@ -148,19 +175,18 @@ if __name__ == "__main__":
     parser.add_argument('input_file', help="Input file path")
     parser.add_argument('job_id', help="Job ID")
     parser.add_argument('is_signal', help='Flag indicating if this is a signal sample', type=int)
-    parser.add_argument('nworkers', help='Number of workers to use', type=int)
     args = parser.parse_args()
     
     # Set up X509 proxy
     os.environ['X509_USER_PROXY'] = args.proxy
 
     # Run the skimmer
-    success = run_skimmer(args.input_file, CONDOR_OUTPUT_DIR, args.nworkers)
+    success = run_skimmer(args.input_file, CONDOR_OUTPUT_DIR)
     
     # Retry once if failed
     if not success:
         print("Skimmer failed; retrying one more time...")
-        success = run_skimmer(args.input_file, CONDOR_OUTPUT_DIR, args.nworkers)
+        success = run_skimmer(args.input_file, CONDOR_OUTPUT_DIR)
     
     # Merge results
     merge_skims(CONDOR_OUTPUT_DIR)

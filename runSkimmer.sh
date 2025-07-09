@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Configuration
 CPUS=1
-MEMORY=2G
+MEMORY=1G
 LOGDIR=logs
 
 X509_USER_PROXY="${X509_USER_PROXY:-/tmp/x509up_u$(id -u)}"
@@ -68,21 +68,17 @@ submit_job() {
     
     local job_name=$(basename "$file_list")
     local jdl=(condor_${job_name}.jdl) || { echo "Error: Failed to create temp file"; return 1; }
-    #trap 'rm -f "$jdl"' RETURN
 
     echo "Creating job description file: $jdl"
     cat >"$jdl" <<EOF
 universe                = Vanilla
-request_cpus            = ${CPUS}
-request_memory          = ${MEMORY}
 executable              = executable.sh
 transfer_executable     = True
 transfer_input_files    = executable.py, keep_and_drop_skim.txt
-arguments               = ${proxy_path} \$(FILE) \$(Process) ${sigflag} \$(request_cpus)
+arguments               = ${proxy_path} \$(FILE) \$(Process) ${sigflag}
 log                     = ${LOGDIR}/\$(Cluster).log
 output                  = ${LOGDIR}/\$(Cluster).\$(Process).out
 error                   = ${LOGDIR}/\$(Cluster).\$(Process).err
-+JobFlavour             = "longlunch"
 on_exit_remove          = (ExitBySignal == False) && (ExitCode == 0)
 max_retries             = 3
 requirements            = Machine != LastRemoteHost
@@ -92,6 +88,7 @@ EOF
     
     echo "Submitting job to condor"
     condor_submit "$jdl"
+    rm -f "$jdl"  # Clean up the JDL file after submission
 }
 
 # Process each dataset and submit jobs
@@ -115,7 +112,7 @@ process_datasets() {
             echo "Warning: Skipping dataset $ds due to errors"
         fi
 
-        # rm -f "$tmpfl"
+        rm -f "$tmpfl"
     done <"$input_list"
 
     echo "All jobs submitted."
