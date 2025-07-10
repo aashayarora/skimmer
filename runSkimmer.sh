@@ -120,7 +120,7 @@ process_datasets() {
 # Main function
 main() {
     # check if x509 proxy exists, and then copy it to afs
-    proxy_path="/afs/cern.ch/user/a/$(whoami)/x509up_u$(id -u)"
+    proxy_path="/afs/cern.ch/user/$(whoami | head -c 1)/$(whoami)/x509up_u$(id -u)"
     if [[ -f "$X509_USER_PROXY" ]]; then
         cp "$X509_USER_PROXY" $proxy_path
     else
