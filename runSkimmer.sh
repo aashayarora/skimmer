@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Configuration
 CPUS=1
-MEMORY=1G
+MEMORY=2G
 LOGDIR=logs
 
 X509_USER_PROXY="${X509_USER_PROXY:-/tmp/x509up_u$(id -u)}"
@@ -72,16 +72,15 @@ submit_job() {
     echo "Creating job description file: $jdl"
     cat >"$jdl" <<EOF
 universe                = Vanilla
-executable              = executable.sh
+request_cpus            = ${CPUS}
+request_memory          = ${MEMORY}
+executable              = executable.py
 transfer_executable     = True
-transfer_input_files    = executable.py, keep_and_drop_skim.txt
+transfer_input_files    = keep_and_drop_skim.txt
 arguments               = ${proxy_path} \$(FILE) \$(Process) ${sigflag}
 log                     = ${LOGDIR}/\$(Cluster).log
-output                  = ${LOGDIR}/\$(Cluster).\$(Process).out
-error                   = ${LOGDIR}/\$(Cluster).\$(Process).err
-on_exit_remove          = (ExitBySignal == False) && (ExitCode == 0)
-max_retries             = 3
-requirements            = Machine != LastRemoteHost
+output                  = ${LOGDIR}/\$(Cluster).out
+error                   = ${LOGDIR}/\$(Cluster).err
 
 queue FILE from ${file_list}
 EOF
