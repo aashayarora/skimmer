@@ -5,7 +5,8 @@ keep Jet.*
 keep GenPart.*
 keep GenJet.*
 keep FatJet.*
-keep MET.*
+keep PuppiMET.*
+keep PFMET.*
 keep btagWeight.*
 keep LHE.*
 keep .*Weight.*
@@ -15,4 +16,7 @@ keep Pileup.*
 keep event
 keep run
 keep luminosityBlock
-keep genWeight
+keep truth*
+keep gen*
+keep Rho.*
+keep PV.*
